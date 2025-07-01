@@ -107,7 +107,7 @@
         // Test Port Scanning
         function testPortScan() {
             try {
-                var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
+                var ports = [2870, 7681, 12345, 26442, 44383, 56789, 56790];
                 var ip = '192.168.1.92'; // IP de la TV
                 var results = [];
                 ports.forEach(port => {
@@ -358,7 +358,7 @@
                     var data = new Float32Array(10000000);
                     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
                     var script = document.createElement('script');
-                    script.text = 'document.body.style.backgroundColor="orange"; window.location="http://192.168.1.92:80/"';
+                    script.text = 'document.body.style.backgroundColor="orange"; window.location="http://192.168.1.92:2870/"';
                     document.body.appendChild(script);
                     updateStatus('WebGL+XSS tenté (orange + redirection si vulnérable)');
                 } else {
@@ -372,7 +372,7 @@
         // Test Ports Post-Crash
         function testPortsPostCrash() {
             try {
-                var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
+                var ports = [2870, 7681, 12345, 26442, 44383, 56789, 56790];
                 var ip = '192.168.1.92'; // IP de la TV
                 var postCrashResults = [];
                 ports.forEach(port => {
