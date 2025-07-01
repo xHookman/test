@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    var canvas = document.getElementById('canvas');
+    var gl = canvas.getContext('webgl2'); // Test WebGL 2.0
+    if (gl) {
+      var ext = gl.getExtension('OES_vertex_array_object');
+      var vao = ext.createVertexArrayOES();
+      var buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      var data = new Float32Array(1000000); // Buffer excessif
+      try {
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        alert('Test buffer overflow');
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      }
+      // Tentative use-after-free
+      gl.deleteBuffer(buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer); // Réutilisation
+      alert('Test use-after-free');
+    }
+  </script>
+</body>
+</html>
